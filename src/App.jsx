@@ -1,47 +1,67 @@
 import { useState } from 'react'
 import OpenAI from 'openai'
+import './App.css'
+
+const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
+})
+
+const ASSISTANTS = {
+  daniel: {
+    id: import.meta.env.VITE_ASSISTANT_ID_DANIEL,
+    name: 'Daniel Bedingfield',
+    username: 'GottaGetThruThis',
+    avatar: '🎤',
+    status: 'online'
+  },
+  craig: {
+    id: import.meta.env.VITE_ASSISTANT_ID_CRAIG,
+    name: 'Craig David',
+    username: 'FillMeIn',
+    avatar: '🎵',
+    status: 'online'
+  }
+}
 
 function App() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [threadId, setThreadId] = useState(null)
+  const [selectedAssistant, setSelectedAssistant] = useState('daniel')
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || isLoading) return
 
     setIsLoading(true)
-    setError(null)
-    const userMessage = { role: 'user', content: input }
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
-
     try {
-      const openai = new OpenAI({
-        apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-        dangerouslyAllowBrowser: true
-      })
-
       let currentThreadId = threadId
       
-      // Create a thread if we don't have one
       if (!currentThreadId) {
         const thread = await openai.beta.threads.create()
         currentThreadId = thread.id
-        setThreadId(thread.id)
+        setThreadId(currentThreadId)
       }
 
-      // Add the user's message to the thread
+      // Add user message
       await openai.beta.threads.messages.create(currentThreadId, {
         role: "user",
         content: input
       })
 
+      // Update UI with user message
+      setMessages(prev => [...prev, { 
+        role: "user", 
+        content: input,
+        username: 'You'
+      }])
+      setInput('')
+
       // Run the assistant
       const run = await openai.beta.threads.runs.create(currentThreadId, {
-        assistant_id: import.meta.env.VITE_ASSISTANT_ID
+        assistant_id: ASSISTANTS[selectedAssistant].id
       })
 
       // Poll for completion
@@ -52,125 +72,97 @@ function App() {
       }
 
       if (runStatus.status === 'completed') {
-        // Get the assistant's response
         const messages = await openai.beta.threads.messages.list(currentThreadId)
         const lastMessage = messages.data[0]
-        
-        const assistantMessage = {
-          role: 'assistant',
-          content: lastMessage.content[0].text.value
+        if (lastMessage.role === "assistant") {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: lastMessage.content[0].text.value,
+            username: ASSISTANTS[selectedAssistant].username
+          }])
         }
-        setMessages(prev => [...prev, assistantMessage])
       } else {
         throw new Error(`Run failed with status: ${runStatus.status}`)
       }
     } catch (error) {
-      console.error('Detailed Error:', error)
-      let errorMessage = 'There was an error processing your request.'
+      console.error('Error:', error)
+      let errorMessage = 'An error occurred while processing your request.'
       
       if (error.response?.status === 401) {
-        errorMessage = 'Invalid API key. Please check your OpenAI API key in the .env file.'
+        errorMessage = 'Invalid API key. Please check your OpenAI API key.'
       } else if (error.response?.status === 429) {
-        errorMessage = 'You have exceeded your API quota. Please check your OpenAI account billing.'
-      } else if (error.message) {
-        errorMessage = `Error: ${error.message}`
+        errorMessage = 'Rate limit exceeded. Please try again later.'
+      } else if (error.message.includes('No thread found')) {
+        errorMessage = 'Session expired. Please try again.'
+        setThreadId(null)
       }
       
-      setError(errorMessage)
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: errorMessage
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: errorMessage,
+        username: ASSISTANTS[selectedAssistant].username
       }])
     } finally {
       setIsLoading(false)
     }
   }
 
-  return (
-    <div style={{ height: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFE5E5' }}>
-      <div style={{ width: '100%', maxWidth: '42rem', margin: '0 auto', padding: '0 1rem' }}>
-        <div style={{ backgroundColor: 'white', borderRadius: '1.5rem', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', padding: '1.5rem', border: '2px solid #FFB6C1' }}>
-          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#FF69B4' }}>
-              Millenial Sounding Board
-            </h1>
-            <p style={{ color: '#FF1493', fontSize: '1.125rem', fontWeight: '500' }}>Daniel Bedingfield. When you need him.</p>
-          </div>
-          
-          <div style={{ backgroundColor: 'white', borderRadius: '1rem', padding: '1rem', marginBottom: '1.5rem', minHeight: '400px', maxHeight: '600px', overflowY: 'auto', border: '2px solid #FFB6C1' }}>
-            {messages.length === 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#FF69B4' }}>
-                <p style={{ fontSize: '1.125rem', fontWeight: '500' }}>Share your thoughts, you've gotta get thru this</p>
-              </div>
-            )}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: '1rem',
-                    borderRadius: '1rem',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                    width: '100%',
-                    maxWidth: '85%',
-                    ...(message.role === 'user'
-                      ? { backgroundColor: '#FF69B4', color: 'white', marginLeft: 'auto' }
-                      : { backgroundColor: '#FFF0F5', color: '#FF1493', marginRight: 'auto', border: '2px solid #FFB6C1' })
-                  }}
-                >
-                  <p style={{ whiteSpace: 'pre-wrap', fontSize: '1.125rem' }}>{message.content}</p>
-                </div>
-              ))}
-              {isLoading && (
-                <div style={{ backgroundColor: '#FFF0F5', padding: '1rem', borderRadius: '1rem', marginRight: 'auto', width: '100%', maxWidth: '85%', border: '2px solid #FFB6C1' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: '0.5rem', height: '0.5rem', backgroundColor: '#FF69B4', borderRadius: '9999px', animation: 'bounce 1s infinite' }}></div>
-                    <div style={{ width: '0.5rem', height: '0.5rem', backgroundColor: '#FF1493', borderRadius: '9999px', animation: 'bounce 1s infinite 0.1s' }}></div>
-                    <div style={{ width: '0.5rem', height: '0.5rem', backgroundColor: '#FF69B4', borderRadius: '9999px', animation: 'bounce 1s infinite 0.2s' }}></div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+  const handleAssistantChange = (assistantKey) => {
+    setSelectedAssistant(assistantKey)
+    setThreadId(null) // Reset thread when switching assistants
+    setMessages([]) // Clear messages when switching assistants
+  }
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '0.75rem' }}>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="What's on your mind?"
-              style={{
-                flex: 1,
-                padding: '1rem',
-                backgroundColor: 'white',
-                border: '2px solid #FFB6C1',
-                borderRadius: '1rem',
-                outline: 'none',
-                fontSize: '1.125rem'
-              }}
-              disabled={isLoading}
-            />
+  return (
+    <div className="app-container">
+      <div className="chat-container">
+        <div className="assistant-selector">
+          {Object.entries(ASSISTANTS).map(([key, assistant]) => (
             <button
-              type="submit"
-              disabled={isLoading}
-              style={{
-                padding: '1rem 2rem',
-                backgroundColor: '#FF69B4',
-                color: 'white',
-                borderRadius: '1rem',
-                outline: 'none',
-                fontSize: '1.125rem',
-                fontWeight: '500',
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                transition: 'all 0.2s',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                opacity: isLoading ? 0.5 : 1
-              }}
+              key={key}
+              className={`assistant-button ${selectedAssistant === key ? 'selected' : ''}`}
+              onClick={() => handleAssistantChange(key)}
             >
-              Send
+              <span className="assistant-avatar">{assistant.avatar}</span>
+              <div className="assistant-info">
+                <div className="username">{assistant.username}</div>
+                <div className="status">
+                  <span className={`status-indicator status-${assistant.status}`}></span>
+                  {assistant.status.charAt(0).toUpperCase() + assistant.status.slice(1)}
+                </div>
+              </div>
             </button>
-          </form>
+          ))}
         </div>
+        <div className="messages">
+          {messages.map((message, index) => (
+            <div key={index} className={`message ${message.role}`}>
+              <div className="message-content">
+                {message.role === 'assistant' && (
+                  <span className="assistant-avatar">
+                    {ASSISTANTS[selectedAssistant].avatar}
+                  </span>
+                )}
+                <div className="message-text">
+                  <div className="username">{message.username}</div>
+                  <div className="content">{message.content}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <form onSubmit={handleSubmit} className="input-form">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            disabled={isLoading}
+          />
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? 'Sending...' : 'Send'}
+          </button>
+        </form>
       </div>
     </div>
   )

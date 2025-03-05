@@ -1,42 +1,266 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/* Retro pixel font */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Base styles */
+:root {
+  --aim-blue: #0066cc;
+  --aim-light-blue: #e6f3ff;
+  --aim-dark-blue: #003366;
+  --aim-pink: #ff00ff;
+  --aim-gray: #c0c0c0;
+  --aim-dark-gray: #808080;
+  --aim-light-gray: #e0e0e0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, var(--aim-light-blue) 0%, #ffffff 100%);
+  font-family: 'Press Start 2P', cursive;
+  color: var(--aim-dark-blue);
+}
+
+.app-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.chat-container {
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  border: 3px solid var(--aim-blue);
+  box-shadow: 
+    5px 5px 0 var(--aim-dark-blue),
+    inset 2px 2px 0 var(--aim-light-gray),
+    inset -2px -2px 0 var(--aim-dark-gray);
+  padding: 20px;
+  position: relative;
+}
+
+/* Title bar */
+.chat-container::before {
+  content: "Millenial Sounding Board";
+  position: absolute;
+  top: -25px;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to right, var(--aim-blue), var(--aim-dark-blue));
+  color: white;
+  padding: 5px 10px;
+  font-size: 12px;
   text-align: center;
+  border: 2px solid var(--aim-dark-blue);
+  box-shadow: 2px 2px 0 var(--aim-dark-gray);
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Assistant selector */
+.assistant-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: center;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.assistant-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: linear-gradient(to bottom, var(--aim-light-gray), var(--aim-gray));
+  border: 2px solid var(--aim-dark-gray);
+  border-radius: 4px;
+  color: var(--aim-dark-blue);
+  font-size: 12px;
+  font-family: 'Press Start 2P', cursive;
+  cursor: pointer;
+  box-shadow: 
+    2px 2px 0 var(--aim-dark-gray),
+    inset 1px 1px 0 white;
+  transition: all 0.1s;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.assistant-button:hover {
+  background: linear-gradient(to bottom, var(--aim-light-blue), var(--aim-blue));
+  color: white;
+  border-color: var(--aim-blue);
 }
 
-.card {
-  padding: 2em;
+.assistant-button.selected {
+  background: linear-gradient(to bottom, var(--aim-pink), var(--aim-dark-blue));
+  color: white;
+  border-color: var(--aim-dark-blue);
 }
 
-.read-the-docs {
-  color: #888;
+.assistant-avatar {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Status indicators */
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  box-shadow: 0 0 4px currentColor;
+}
+
+.status-online {
+  background-color: #00ff00;
+  color: #00ff00;
+}
+
+.status-away {
+  background-color: #ffff00;
+  color: #ffff00;
+}
+
+/* Messages container */
+.messages {
+  background: white;
+  border: 2px solid var(--aim-gray);
+  padding: 15px;
+  margin-bottom: 20px;
+  height: 400px;
+  overflow-y: auto;
+  box-shadow: inset 2px 2px 0 var(--aim-dark-gray);
+}
+
+/* Message styles */
+.message {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 4px;
+  max-width: 85%;
+  position: relative;
+  box-shadow: 2px 2px 0 var(--aim-dark-gray);
+}
+
+.message.user {
+  background: linear-gradient(to bottom, var(--aim-blue), var(--aim-dark-blue));
+  color: white;
+  margin-left: auto;
+}
+
+.message.assistant {
+  background: linear-gradient(to bottom, var(--aim-light-gray), var(--aim-gray));
+  color: var(--aim-dark-blue);
+  margin-right: auto;
+}
+
+.message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Username style */
+.username {
+  font-weight: bold;
+  color: var(--aim-pink);
+  margin-bottom: 4px;
+  font-size: 10px;
+}
+
+/* Input form */
+.input-form {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 8px;
+  border: 2px solid var(--aim-gray);
+  border-radius: 4px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  box-shadow: inset 2px 2px 0 var(--aim-dark-gray);
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--aim-blue);
+}
+
+button {
+  padding: 8px 16px;
+  background: linear-gradient(to bottom, var(--aim-pink), var(--aim-dark-blue));
+  color: white;
+  border: 2px solid var(--aim-dark-blue);
+  border-radius: 4px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 
+    2px 2px 0 var(--aim-dark-gray),
+    inset 1px 1px 0 white;
+  transition: all 0.1s;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 
+    1px 1px 0 var(--aim-dark-gray),
+    inset 1px 1px 0 white;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 16px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--aim-light-gray);
+  border: 2px solid var(--aim-gray);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--aim-gray), var(--aim-dark-gray));
+  border: 2px solid var(--aim-gray);
+  box-shadow: inset 1px 1px 0 white;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, var(--aim-dark-gray), var(--aim-gray));
+}
+
+.assistant-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.status {
+  font-size: 8px;
+  color: var(--aim-dark-gray);
+  display: flex;
+  align-items: center;
+}
+
+.message-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
